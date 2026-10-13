@@ -1,167 +1,62 @@
-# design-presta-2
+# Header Presta 2
 
-Sklep PrestaShop 8.2.7 (PHP 8.1) uruchamiany w Dockerze.
+A custom PrestaShop 8.2 header, built as a child theme of `classic`, plus a lightweight Google Analytics 4 module. Only the header is customized and the rest of the store is stock PrestaShop.
 
-## Zakres
+The design comes from the [Ecommerce Search & Discovery UI Kit](https://www.figma.com/community/file/981543186947734892/ecommerce-search-discovery-ui-kit) (Figma Community). The desktop (1440px) and mobile (375px) views are reproduced 1:1, and the layout scales fluidly between them.
 
-Nagłówek sklepu, nie cały sklep — child theme motywu `classic`. Reszta strony zostaje taka,
-jaką daje PrestaShop. Do tego moduł **Design Analytics**, który raportuje ruch i sprzedaż
-do Google Analytics 4.
-
-Design: [Ecommerce Search & Discovery UI Kit](https://www.figma.com/community/file/981543186947734892/ecommerce-search-discovery-ui-kit)
-z Figma Community. Widok desktopowy i mobilny odwzorowane 1:1. Kit rysuje tylko te dwie
-szerokości — 375 i 1440 px. Układ pomiędzy nimi jest prosty i skaluje się płynnie.
-
-![Nagłówek na desktopie](docs/header-desktop.png)
+![Desktop header](docs/header-desktop.png)
 
 <p>
-  <img src="docs/header-mobile.png" alt="Nagłówek na mobilce" width="330">
-  <img src="docs/header-mobile-menu.png" alt="Menu mobilne" width="330">
+  <img src="docs/header-mobile.png" alt="Mobile header" width="330">
+  <img src="docs/header-mobile-menu.png" alt="Mobile menu" width="330">
 </p>
 
-## Uruchomienie
+## What's inside
+
+- **`designpresta` theme**: the header, search bar, account, cart and main menu templates, with design tokens in CSS
+- **`designmenu` module**: Women / Men / Kids switcher. Each section shows only the menu items assigned to it in the back office, and the section labels are translatable.
+- **`designanalytics` module**: sends page views and `purchase` events to GA4 via `gtag.js`, using only two hooks (`displayHeader`, `displayOrderConfirmation`) and no core or theme changes. The measurement ID lives in `Configuration`, not in the code.
+
+## Getting started
 
 ```bash
-cp .env.example .env
-```
-
-Uzupełnij `DB_PASSWORD` i `DB_ROOT_PASSWORD` własnymi wartościami, potem:
-
-```bash
+cp .env.example .env   # set DB_PASSWORD and DB_ROOT_PASSWORD
 docker compose up -d
 ```
 
-| Usługa     | Adres                   |
-|------------|-------------------------|
-| Sklep      | http://localhost:1001   |
-| phpMyAdmin | http://localhost:1002   |
+| Service | URL |
+|---|---|
+| Store | http://localhost:1001 |
+| phpMyAdmin | http://localhost:1002 |
 
-## Instalacja
-
-Instalator nie uruchamia się automatycznie (`PS_INSTALL_AUTO=0`). Przy pierwszym wejściu
-na http://localhost:1001 sklep przekieruje na kreator. W kroku konfiguracji bazy:
-
-| Pole              | Wartość                |
-|-------------------|------------------------|
-| Adres serwera     | `mysql`                |
-| Nazwa bazy        | wartość `DB_NAME`      |
-| Login             | wartość `DB_USER`      |
-| Hasło             | wartość `DB_PASSWORD`  |
-| Prefiks tabel     | `ps_`                  |
-
-Po zakończeniu instalacji PrestaShop wymaga usunięcia katalogu instalatora:
+The installer runs in the browser. For the database step, use host `mysql`, the `DB_*` values from `.env` and the prefix `ps_`. Then:
 
 ```bash
 docker exec presta2-shop rm -rf /var/www/html/install
+docker exec presta2-shop sh -c 'ls -d /var/www/html/admin*'   # back office folder
 ```
 
-Wejdź na `http://localhost:1001/admin/`. PrestaShop przy tym pierwszym wejściu zmienia nazwę
-katalogu panelu na losową i od razu przekierowuje Cię pod nowy adres — znajdziesz go w pasku
-przeglądarki. Kolejne wejścia na `/admin/` dają już 404, bo stary katalog nie istnieje.
+## Setup after install
 
-Jeśli zgubisz ten adres, odczytasz go tak:
+The repo ships no DB dump, so a fresh install starts with the demo catalog:
 
-```bash
-docker exec presta2-shop sh -c 'ls -d /var/www/html/admin*'
-```
+1. **Theme:** enable *Design Presta* in *Design → Theme & Logo*.
+2. **Modules:** install both modules:
+   ```bash
+   docker exec presta2-shop php bin/console prestashop:module install designmenu
+   docker exec presta2-shop php bin/console prestashop:module install designanalytics
+   ```
+3. **Menu:** add categories to the *Main menu* module, then assign menu items to each section in *Design Menu → Configure*.
+4. **Analytics:** paste a GA4 measurement ID (`G-XXXXXXXXXX`) in *Design Analytics → Configure* and enable it. *Debug mode* marks hits for GA4 DebugView.
+5. **Clear the cache** after switching the theme or installing modules. Otherwise some strings stay untranslated:
+   ```bash
+   docker exec presta2-shop sh -c 'rm -rf /var/www/html/var/cache/*'
+   ```
 
-## Po instalacji
+While working on templates, disable the CSS, JS and Smarty caches in *Advanced Parameters → Performance*. Turn them back on for production.
 
-Repo nie zawiera dumpu bazy, więc świeża instalacja startuje z katalogiem demo PrestaShopu
-i motywem `classic`. Poniższe kroki doprowadzają sklep do stanu, dla którego ten motyw
-był robiony.
+## Notes
 
-### 1. Motyw
-
-`Wygląd → Szablony` → w sekcji z dostępnymi szablonami użyj **Design Presta**. Motyw da się
-też wybrać wcześniej, w kroku `Zawartość Twojego sklepu` kreatora instalacji.
-
-Po przełączeniu motywu i po instalacji każdego z modułów skasuj skompilowany cache:
-
-```bash
-docker exec presta2-shop sh -c 'rm -rf /var/www/html/var/cache/dev /var/www/html/var/cache/prod'
-```
-
-Bez tego PrestaShop czyta stary katalog tłumaczeń i część napisów zostaje po angielsku —
-na froncie `Find a store` zamiast `Znajdź sklep`, a w panelu modułu całe etykiety formularza.
-
-### 2. Moduł Design Menu
-
-`Moduły → Menedżer modułów` → wyszukaj **Design Menu** → *Zainstaluj*. To samo z linii poleceń:
-
-```bash
-docker exec presta2-shop php bin/console prestashop:module install designmenu
-```
-
-Instalacja zakłada trzy działy nagłówka — Kobieta, Mężczyzna, Dziecko — aktywne i puste.
-Dział bez przypisanych pozycji nie filtruje menu, więc do czasu konfiguracji z punktu 4
-każdy z nich pokazuje pełne drzewo kategorii.
-
-### 3. Katalog i menu
-
-Identyfikatory kategorii są danymi konkretnej bazy, więc tego kroku nie da się zaszyć
-w kodzie modułu — trzeba go wyklikać raz:
-
-1. `Katalog → Kategorie` — dodaj kategorie, które mają stać w nagłówku.
-2. `Moduły → Menedżer modułów` → **Główne menu** → *Konfiguruj* — przenieś te kategorie
-   do wybranych pozycji menu.
-
-### 4. Przypisanie kategorii do działów
-
-`Moduły → Menedżer modułów` → **Design Menu** → *Konfiguruj*. Przy każdym dziale zaznacz
-pozycje menu, które ma pokazywać. Etykiety działów są polami per język — tam też zmienisz
-ich nazwy.
-
-### 5. Moduł Design Analytics
-
-`Moduły → Menedżer modułów` → wyszukaj **Analityka Google** → *Zainstaluj*. To samo z linii poleceń:
-
-```bash
-docker exec presta2-shop php bin/console prestashop:module install designanalytics
-```
-
-Potem *Konfiguruj* i wklej identyfikator pomiaru GA4 w postaci `G-XXXXXXXXXX`. Znajdziesz go
-w Google Analytics w `Administracja → Strumienie danych → Twój strumień internetowy`.
-Bez identyfikatora przełącznik `Wysyłaj dane do Google Analytics` nie da się włączyć —
-moduł po instalacji jest wyłączony i nie dokłada do strony ani jednej linijki.
-
-`Tryb diagnostyczny` oznacza każde trafienie znacznikiem `debug_mode`, dzięki któremu ruch
-widać na żywo w raporcie DebugView. Na produkcji trzymaj go wyłączonym.
-
-### 6. Ustawienia na czas pracy nad motywem
-
-`Parametry zaawansowane → Wydajność` — wyłącz `Buforowanie CSS`, `Buforowanie JavaScript`
-i `Pamięć podręczna Smarty`. Bez tego ostatniego zmiany w szablonach nie będą widoczne
-mimo poprawnego kodu. Przed wdrożeniem produkcyjnym wszystkie trzy wracają na włączone.
-
-## Jak działa analityka
-
-Dane do Google wysyła przeglądarka klienta, nie serwer sklepu. Skrypt `gtag.js` strzela
-żądaniem pod `google-analytics.com/g/collect`, a nazwa zdarzenia i liczby lecą w parametrach.
-Moduł tylko wstawia ten skrypt w stronę — dwoma hookami, bez dotykania rdzenia ani szablonów
-motywu:
-
-| Hook | Kiedy | Co wysyła |
-|------|-------|-----------|
-| `displayHeader` | `<head>` każdej strony sklepu | odsłonę |
-| `displayOrderConfirmation` | strona potwierdzenia zamówienia | `purchase` z kwotą i pozycjami |
-
-Dane zamówienia moduł dostaje od PrestaShopu gotowym obiektem `Order`. Odświeżenie
-potwierdzenia nie wysyła zdarzenia drugi raz.
-
-Identyfikator pomiaru siedzi w `Configuration`, nie w kodzie — dlatego nie trafia do repo
-i zmienia się z Back Office. Bez poprawnego `G-XXXXXXXXXX` moduł nie dokłada do strony niczego.
-
-Poza zakresem: `view_item`, `add_to_cart` i zgoda na cookies.
-
-## Zatrzymanie
-
-```bash
-docker compose down
-```
-
-Pliki sklepu leżą w katalogu `prestashop/` na dysku i `down` ich nie rusza. Baza siedzi
-w wolumenie `mysql_data` i też przeżywa `down`; kasuje ją dopiero `docker compose down -v`.
-
-Katalog `prestashop/` jest w `.gitignore` poza `themes/`, `modules/` i `override/` —
-rdzeń PrestaShopu nie trafia do repo, bo odtwarza go tag obrazu z `docker-compose.yml`.
+- Only `prestashop/themes/`, `modules/` and `override/` are tracked. The PrestaShop core comes from the pinned Docker image.
+- The database lives in the `mysql_data` volume, which survives `docker compose down` but not `down -v`.
+- Out of scope: `view_item`, `add_to_cart` and cookie consent.
