@@ -4,11 +4,11 @@ A custom PrestaShop 8.2 header, built as a child theme of `classic`, plus a ligh
 
 The design comes from the [Ecommerce Search & Discovery UI Kit](https://www.figma.com/community/file/981543186947734892/ecommerce-search-discovery-ui-kit) (Figma Community). The desktop (1440px) and mobile (375px) views are reproduced 1:1, and the layout scales fluidly between them.
 
-![Desktop header](docs/header-desktop.png)
+![Desktop header](docs/header-desktop.webp)
 
 <p>
-  <img src="docs/header-mobile.png" alt="Mobile header" width="330">
-  <img src="docs/header-mobile-menu.png" alt="Mobile menu" width="330">
+  <img src="docs/header-mobile.webp" alt="Mobile header" width="330">
+  <img src="docs/header-mobile-menu.webp" alt="Mobile menu" width="330">
 </p>
 
 ## What's inside
