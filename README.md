@@ -58,5 +58,6 @@ While working on templates, disable the CSS, JS and Smarty caches in *Advanced P
 ## Notes
 
 - Only `prestashop/themes/`, `modules/` and `override/` are tracked. The PrestaShop core comes from the pinned Docker image.
+- PrestaShop 8.2 supports PHP up to 8.1, which is end-of-life and has no official release fixing CVE-2026-109618 and CVE-2026-109619 (unauthenticated RCE). `docker/prestashop/Dockerfile` rebuilds PHP 8.1 and its extensions from the security team's backport branch `PHP-8.1-CVE-2026-109618-109619` in php-src, so the first `docker compose up` compiles PHP and takes several minutes. The long-term fix is moving to PrestaShop 9 on a supported PHP.
 - The database lives in the `mysql_data` volume, which survives `docker compose down` but not `down -v`.
 - Out of scope: `view_item`, `add_to_cart` and cookie consent.
